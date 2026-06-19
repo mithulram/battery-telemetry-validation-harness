@@ -1,0 +1,22 @@
+# Build artifacts
+cpp/build/
+artifacts/
+*.o
+*.a
+*.so
+*.dylib
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Generated demo outputs (keep examples/)
+examples/generated.csv

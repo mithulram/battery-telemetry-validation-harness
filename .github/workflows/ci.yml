@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build cpp/build --parallel
+
+      - name: Run CTest
+        run: cd cpp/build && ctest --output-on-failure
+
+      - name: End-to-end validation demo
+        run: |
+          mkdir -p artifacts
+          python3 python/generate_telemetry.py \
+            --output examples/generated.csv \
+            --records 20 \
+            --inject-faults 3
+          ./cpp/build/bms-validate \
+            --input examples/sample_telemetry.csv \
+            --output artifacts/sample_report.json \
+            --format csv || test $? -eq 1
+          ./cpp/build/bms-validate \
+            --input examples/generated.csv \
+            --output artifacts/generated_report.json \
+            --format csv || test $? -eq 1
+          test -s artifacts/sample_report.json
+          test -s artifacts/generated_report.json

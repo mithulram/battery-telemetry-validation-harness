@@ -20,3 +20,9 @@ venv/
 
 # Generated demo outputs (keep examples/)
 examples/generated.csv
+
+.env
+.env.*
+!.env.example
+*.pem
+*.key

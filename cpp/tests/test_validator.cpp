@@ -148,4 +148,24 @@ TEST(IoHelpers, LoadsCsvAndProducesJsonReport) {
     EXPECT_NE(json.find("\"invalid_records\": 1"), std::string::npos);
 }
 
+TEST(IoHelpers, RejectsCsvWithUnterminatedQuote) {
+    EXPECT_THROW(load_csv("../../cpp/tests/fixtures/malformed_unterminated_quote.csv"),
+                 std::runtime_error);
+}
+
+TEST(IoHelpers, RejectsCsvMissingRequiredColumn) {
+    EXPECT_THROW(load_csv("../../cpp/tests/fixtures/malformed_missing_column.csv"),
+                 std::runtime_error);
+}
+
+TEST(IoHelpers, RejectsJsonWithUnicodeEscape) {
+    EXPECT_THROW(load_json("../../cpp/tests/fixtures/malformed_unicode_escape.json"),
+                 std::runtime_error);
+}
+
+TEST(IoHelpers, RejectsJsonWithTrailingContent) {
+    EXPECT_THROW(load_json("../../cpp/tests/fixtures/malformed_trailing_content.json"),
+                 std::runtime_error);
+}
+
 }  // namespace bms

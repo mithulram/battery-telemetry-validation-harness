@@ -12,6 +12,7 @@ build:
 
 test: build
 	cd $(BUILD_DIR) && ctest --output-on-failure
+	python3 -m unittest discover -s python/tests -v
 
 demo: build
 	mkdir -p $(ARTIFACTS) examples docs/screenshots

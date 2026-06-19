@@ -1,0 +1,2 @@
+timestamp_iso,cell_id,voltage_v,temperature_c
+2024-06-01T12:00:00Z,CELL-01,3.7,25.0,80.0

@@ -26,8 +26,26 @@ TelemetryRecord make_record(const std::string& timestamp,
 
 TEST(ValidatorRules, AcceptsValidIso8601Timestamp) {
     EXPECT_TRUE(is_valid_iso8601_timestamp("2024-06-01T12:30:45Z"));
+    EXPECT_TRUE(is_valid_iso8601_timestamp("2024-01-01T00:00:00Z"));
+    EXPECT_TRUE(is_valid_iso8601_timestamp("2024-12-31T23:59:59Z"));
+    EXPECT_TRUE(is_valid_iso8601_timestamp("2024-02-29T12:00:00Z"));
+    EXPECT_TRUE(is_valid_iso8601_timestamp("2000-02-29T00:00:00Z"));
     EXPECT_FALSE(is_valid_iso8601_timestamp("2024-06-01 12:30:45"));
     EXPECT_FALSE(is_valid_iso8601_timestamp(""));
+}
+
+TEST(ValidatorRules, RejectsInvalidCalendarComponents) {
+    EXPECT_FALSE(is_valid_iso8601_timestamp("2024-13-01T12:00:00Z"));
+    EXPECT_FALSE(is_valid_iso8601_timestamp("2024-00-01T12:00:00Z"));
+    EXPECT_FALSE(is_valid_iso8601_timestamp("2024-02-30T12:00:00Z"));
+    EXPECT_FALSE(is_valid_iso8601_timestamp("2024-04-31T12:00:00Z"));
+    EXPECT_FALSE(is_valid_iso8601_timestamp("2023-02-29T12:00:00Z"));
+    EXPECT_FALSE(is_valid_iso8601_timestamp("1900-02-29T12:00:00Z"));
+    EXPECT_FALSE(is_valid_iso8601_timestamp("2024-06-01T24:00:00Z"));
+    EXPECT_FALSE(is_valid_iso8601_timestamp("2024-06-01T12:60:00Z"));
+    EXPECT_FALSE(is_valid_iso8601_timestamp("2024-06-01T12:00:60Z"));
+    EXPECT_FALSE(is_valid_iso8601_timestamp("2024-06-01T12:00:00"));
+    EXPECT_FALSE(is_valid_iso8601_timestamp("2024-06-01T12:00:00z"));
 }
 
 TEST(ValidatorRules, VoltageRange) {

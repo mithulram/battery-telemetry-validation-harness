@@ -5,7 +5,6 @@
 #include <cctype>
 #include <fstream>
 #include <map>
-#include <regex>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -101,6 +100,9 @@ std::vector<std::string> split_csv_line(const std::string& line) {
         }
         current.push_back(ch);
     }
+    if (in_quotes) {
+        throw std::runtime_error("Unterminated quoted field in CSV line");
+    }
     fields.push_back(trim(current));
     return fields;
 }
@@ -173,6 +175,9 @@ std::string parse_json_string(const std::string& text, std::size_t& pos) {
                 case 't':
                     value.push_back('\t');
                     break;
+                case 'u':
+                    throw std::runtime_error(
+                        "Unicode escape sequences are not supported in telemetry JSON");
                 default:
                     throw std::runtime_error("Unsupported JSON escape sequence");
             }
@@ -255,9 +260,72 @@ TelemetryRecord parse_json_object(const std::string& text, std::size_t& pos) {
 
 }  // namespace
 
+namespace {
+
+bool is_leap_year(int year) {
+    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+}
+
+int days_in_month(int year, int month) {
+    static constexpr int kDays[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (month < 1 || month > 12) {
+        return 0;
+    }
+    if (month == 2 && is_leap_year(year)) {
+        return 29;
+    }
+    return kDays[month - 1];
+}
+
+int parse_fixed_width_int(const std::string& text, std::size_t start, std::size_t length) {
+    if (start + length > text.size()) {
+        return -1;
+    }
+    int value = 0;
+    for (std::size_t i = 0; i < length; ++i) {
+        const char ch = text[start + i];
+        if (!std::isdigit(static_cast<unsigned char>(ch))) {
+            return -1;
+        }
+        value = value * 10 + (ch - '0');
+    }
+    return value;
+}
+
+}  // namespace
+
 bool is_valid_iso8601_timestamp(const std::string& timestamp) {
-    static const std::regex pattern(R"(^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$)");
-    return std::regex_match(timestamp, pattern);
+    if (timestamp.size() != 20) {
+        return false;
+    }
+    if (timestamp[4] != '-' || timestamp[7] != '-' || timestamp[10] != 'T' ||
+        timestamp[13] != ':' || timestamp[16] != ':' || timestamp[19] != 'Z') {
+        return false;
+    }
+
+    for (std::size_t i = 0; i < timestamp.size(); ++i) {
+        if (i == 4 || i == 7 || i == 10 || i == 13 || i == 16 || i == 19) {
+            continue;
+        }
+        if (!std::isdigit(static_cast<unsigned char>(timestamp[i]))) {
+            return false;
+        }
+    }
+
+    const int year = parse_fixed_width_int(timestamp, 0, 4);
+    const int month = parse_fixed_width_int(timestamp, 5, 2);
+    const int day = parse_fixed_width_int(timestamp, 8, 2);
+    const int hour = parse_fixed_width_int(timestamp, 11, 2);
+    const int minute = parse_fixed_width_int(timestamp, 14, 2);
+    const int second = parse_fixed_width_int(timestamp, 17, 2);
+
+    if (year < 0 || month < 1 || month > 12 || day < 1 || hour > 23 || minute > 59 ||
+        second > 59) {
+        return false;
+    }
+
+    const int max_day = days_in_month(year, month);
+    return day <= max_day;
 }
 
 bool is_voltage_in_range(double voltage_v) {

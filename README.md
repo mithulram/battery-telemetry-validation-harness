@@ -79,6 +79,30 @@ python3 python/generate_telemetry.py \
   --inject-faults 3
 ```
 
+Supported fault types (via `--fault-types`, comma-separated):
+
+| Fault type | Validator rule triggered |
+|------------|--------------------------|
+| `voltage` | `voltage_range` |
+| `temperature` | `temperature_range` |
+| `soc` | `soc_range` |
+| `bad_timestamp` | `timestamp_format` |
+| `missing_cell_id` | `cell_id_required` |
+| `duplicate` | `duplicate_reading` |
+| `non_monotonic` | `non_monotonic_timestamp` |
+
+Use `--fault-types` to inject specific faults deterministically for the same `--seed`:
+
+```bash
+python3 python/generate_telemetry.py \
+  --output examples/generated.csv \
+  --records 30 \
+  --seed 42 \
+  --fault-types voltage,duplicate,non_monotonic
+```
+
+Without `--fault-types`, `--inject-faults N` cycles through all seven injectors in a reproducible order for the given seed.
+
 ## Report schema
 
 ```json
